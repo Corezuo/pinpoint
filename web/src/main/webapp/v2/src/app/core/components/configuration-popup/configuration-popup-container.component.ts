@@ -1,7 +1,6 @@
 import { Component, OnInit, Output, EventEmitter, AfterViewInit, Input, ElementRef } from '@angular/core';
 
-import { DynamicPopup, WindowRefService, PopupConstant, UrlRouteManagerService, StoreHelperService } from 'app/shared/services';
-import { Actions } from 'app/shared/store';
+import { DynamicPopup, WindowRefService, PopupConstant, UrlRouteManagerService, AnalyticsService, TRACKED_EVENT_LIST } from 'app/shared/services';
 
 @Component({
     selector: 'pp-configuration-popup-container',
@@ -18,7 +17,7 @@ export class ConfigurationPopupContainerComponent implements OnInit, AfterViewIn
     constructor(
         private urlRouteManagerService: UrlRouteManagerService,
         private windowRefService: WindowRefService,
-        private storeHelperService: StoreHelperService,
+        private analyticsService: AnalyticsService,
         private el: ElementRef
     ) {}
 
@@ -44,23 +43,18 @@ export class ConfigurationPopupContainerComponent implements OnInit, AfterViewIn
     }
 
     onMenuClick(type: string): void {
-        this.updateURLPathState();
+        this.analyticsService.trackEvent(TRACKED_EVENT_LIST.CLICK_CONFIGURATION_MENU, type);
         this.urlRouteManagerService.moveToConfigPage(type);
         this.outClose.emit();
     }
 
     onOpenLink(): void {
+        this.analyticsService.trackEvent(TRACKED_EVENT_LIST.CLICK_GITHUB_LINK);
         this.windowRefService.nativeWindow.open('http://github.com/naver/pinpoint');
         this.outClose.emit();
     }
 
     onClickOutside(): void {
         this.outClose.emit();
-    }
-
-    private updateURLPathState(): void {
-        const pathName = (this.windowRefService.nativeWindow as Window).location.pathname;
-
-        this.storeHelperService.dispatch(new Actions.UpdateURLPath(pathName));
     }
 }

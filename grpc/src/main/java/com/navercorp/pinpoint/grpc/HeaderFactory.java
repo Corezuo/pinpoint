@@ -16,6 +16,7 @@
 
 package com.navercorp.pinpoint.grpc;
 
+import io.grpc.Attributes;
 import io.grpc.Metadata;
 
 /**

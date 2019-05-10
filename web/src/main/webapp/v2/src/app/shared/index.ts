@@ -1,5 +1,5 @@
-
-import { NgModule } from '@angular/core';
+import { NgModule, ModuleWithProviders } from '@angular/core';
+import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ClipboardModule } from 'ngx-clipboard';
@@ -42,6 +42,9 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 import { JSONTextParserPipe } from './pipes/json-text-parser.pipe';
 import { DynamicPopupService } from './services/dynamic-popup.service';
 import { MessageQueueService } from './services/message-queue.service';
+import { WindowRefService } from './services/window-ref.service';
+import { ApplicationListDataService } from './services/application-list-data.service';
+import { SafeStylePipe } from './pipes/safe-style.pipe';
 
 @NgModule({
     declarations: [
@@ -55,6 +58,7 @@ import { MessageQueueService } from './services/message-queue.service';
         FormFieldErrorMessageComponent,
         ServerErrorMessageComponent,
         SafeHtmlPipe,
+        SafeStylePipe,
         JSONTextParserPipe,
         SettingHeightDirective,
         ContextPopupDirective,
@@ -63,10 +67,12 @@ import { MessageQueueService } from './services/message-queue.service';
     ],
     imports: [
         CommonModule,
+        RouterModule,
         ClickOutsideModule
     ],
     exports: [
         CommonModule,
+        RouterModule,
         FormsModule,
         ClipboardModule,
         ClickOutsideModule,
@@ -79,35 +85,45 @@ import { MessageQueueService } from './services/message-queue.service';
         FormFieldErrorMessageComponent,
         ServerErrorMessageComponent,
         SafeHtmlPipe,
+        SafeStylePipe,
         JSONTextParserPipe,
         SettingHeightDirective,
         ContextPopupDirective,
         SplitterDirective,
         SearchInputDirective
     ],
-    providers: [
-        TranslateReplaceService,
-        ServerTimeDataService,
-        ServerTimeResolverService,
-        ComponentDefaultSettingDataService,
-        RouteInfoCollectorService,
-        WebAppSettingDataService,
-        NewUrlStateNotificationService,
-        UrlRouteManagerService,
-        SystemConfigurationDataService,
-        SystemConfigurationResolverService,
-        SplitRatioService,
-        GutterEventService,
-        ApplicationListResolverService,
-        AnalyticsService,
-        BrowserSupportCheckService,
-        AgentHistogramDataService,
-        TransactionDetailDataService,
-        TransactionViewTypeService,
-        StoreHelperService,
-        UrlValidateGuard,
-        DynamicPopupService,
-        MessageQueueService
-    ]
+    providers: []
 })
-export class SharedModule { }
+export class SharedModule {
+    static forRoot(): ModuleWithProviders {
+        return {
+            ngModule: SharedModule,
+            providers: [
+                SystemConfigurationDataService,
+                SystemConfigurationResolverService,
+                TranslateReplaceService,
+                ServerTimeDataService,
+                ServerTimeResolverService,
+                ComponentDefaultSettingDataService,
+                RouteInfoCollectorService,
+                WebAppSettingDataService,
+                NewUrlStateNotificationService,
+                UrlRouteManagerService,
+                StoreHelperService,
+                UrlValidateGuard,
+                AnalyticsService,
+                WindowRefService,
+                SplitRatioService,
+                GutterEventService,
+                BrowserSupportCheckService,
+                AgentHistogramDataService,
+                TransactionDetailDataService,
+                TransactionViewTypeService,
+                MessageQueueService,
+                DynamicPopupService,
+                ApplicationListResolverService,
+                ApplicationListDataService
+            ]
+        };
+    }
+}

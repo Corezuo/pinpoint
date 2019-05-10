@@ -16,6 +16,8 @@
 
 package com.navercorp.pinpoint.collector.receiver.thrift.tcp;
 
+import com.navercorp.pinpoint.collector.service.async.AgentEventAsyncTaskService;
+import com.navercorp.pinpoint.collector.service.async.AgentLifeCycleAsyncTaskService;
 import com.navercorp.pinpoint.common.server.util.AgentEventType;
 import com.navercorp.pinpoint.common.server.util.AgentLifeCycleState;
 import com.navercorp.pinpoint.common.util.Assert;
@@ -26,6 +28,8 @@ import com.navercorp.pinpoint.rpc.packet.HandshakeResponseType;
 import com.navercorp.pinpoint.rpc.packet.PingPayloadPacket;
 import com.navercorp.pinpoint.rpc.packet.RequestPacket;
 import com.navercorp.pinpoint.rpc.packet.SendPacket;
+import com.navercorp.pinpoint.rpc.server.ChannelProperties;
+import com.navercorp.pinpoint.rpc.server.DefaultChannelProperties;
 import com.navercorp.pinpoint.rpc.server.PinpointServer;
 import com.navercorp.pinpoint.rpc.server.ServerMessageListener;
 import com.navercorp.pinpoint.rpc.server.ServerMessageListenerFactory;
@@ -43,19 +47,19 @@ class AgentBaseDataReceiverServerMessageListenerFactory implements ServerMessage
 
     private final Executor executor;
     private final TCPPacketHandler tcpPacketHandler;
-    private final AgentEventHandler agentEventHandler;
-    private final AgentLifeCycleEventHandler agentLifeCycleEventHandler;
+    private final AgentEventAsyncTaskService agentEventAsyncTaskService;
+    private final AgentLifeCycleAsyncTaskService agentLifeCycleAsyncTaskService;
 
-    public AgentBaseDataReceiverServerMessageListenerFactory(Executor executor, TCPPacketHandler tcpPacketHandler, AgentEventHandler agentEventHandler, AgentLifeCycleEventHandler agentLifeCycleEventHandler) {
+    public AgentBaseDataReceiverServerMessageListenerFactory(Executor executor, TCPPacketHandler tcpPacketHandler, AgentEventAsyncTaskService agentEventAsyncTaskService, AgentLifeCycleAsyncTaskService agentLifeCycleAsyncTaskService) {
         this.executor = Assert.requireNonNull(executor, "executor must not be null");
         this.tcpPacketHandler = Assert.requireNonNull(tcpPacketHandler, "tcpPacketHandler must not be null");
-        this.agentEventHandler = Assert.requireNonNull(agentEventHandler, "agentEventTask must not be null");
-        this.agentLifeCycleEventHandler = Assert.requireNonNull(agentLifeCycleEventHandler, "agentLifeCycleTask must not be null");
+        this.agentEventAsyncTaskService = Assert.requireNonNull(agentEventAsyncTaskService, "agentEventTask must not be null");
+        this.agentLifeCycleAsyncTaskService = Assert.requireNonNull(agentLifeCycleAsyncTaskService, "agentLifeCycleTask must not be null");
     }
 
     @Override
     public ServerMessageListener create() {
-        return new AgentBaseDataReceiverServerMessageListener(executor, tcpPacketHandler, agentEventHandler, agentLifeCycleEventHandler);
+        return new AgentBaseDataReceiverServerMessageListener(executor, tcpPacketHandler, agentEventAsyncTaskService, agentLifeCycleAsyncTaskService);
     }
 
 
@@ -65,14 +69,14 @@ class AgentBaseDataReceiverServerMessageListenerFactory implements ServerMessage
 
         private final Executor executor;
         private final TCPPacketHandler tcpPacketHandler;
-        private final AgentEventHandler agentEventHandler;
-        private final AgentLifeCycleEventHandler agentLifeCycleEventHandler;
+        private final AgentEventAsyncTaskService agentEventAsyncTaskService;
+        private final AgentLifeCycleAsyncTaskService agentLifeCycleAsyncTaskService;
 
-        private AgentBaseDataReceiverServerMessageListener(Executor executor, TCPPacketHandler tcpPacketHandler, AgentEventHandler agentEventHandler, AgentLifeCycleEventHandler agentLifeCycleEventHandler) {
+        private AgentBaseDataReceiverServerMessageListener(Executor executor, TCPPacketHandler tcpPacketHandler, AgentEventAsyncTaskService agentEventAsyncTaskService, AgentLifeCycleAsyncTaskService agentLifeCycleEventHandler) {
             this.executor = Assert.requireNonNull(executor, "executor must not be null");
             this.tcpPacketHandler = Assert.requireNonNull(tcpPacketHandler, "tcpPacketHandler must not be null");
-            this.agentEventHandler = Assert.requireNonNull(agentEventHandler, "agentEventTask must not be null");
-            this.agentLifeCycleEventHandler = Assert.requireNonNull(agentLifeCycleEventHandler, "agentLifeCycleTask must not be null");
+            this.agentEventAsyncTaskService = Assert.requireNonNull(agentEventAsyncTaskService, "agentEventTask must not be null");
+            this.agentLifeCycleAsyncTaskService = Assert.requireNonNull(agentLifeCycleEventHandler, "agentLifeCycleTask must not be null");
         }
 
         @Override
@@ -94,6 +98,7 @@ class AgentBaseDataReceiverServerMessageListenerFactory implements ServerMessage
             }
         }
 
+        // TODO ?
         @Override
         public void handleSend(SendPacket sendPacket, PinpointSocket pinpointSocket) {
             executor.execute(new Runnable() {
@@ -104,6 +109,7 @@ class AgentBaseDataReceiverServerMessageListenerFactory implements ServerMessage
             });
         }
 
+        // TODO ?
         @Override
         public void handleRequest(RequestPacket requestPacket, PinpointSocket pinpointSocket) {
             executor.execute(new Runnable() {
@@ -114,20 +120,21 @@ class AgentBaseDataReceiverServerMessageListenerFactory implements ServerMessage
             });
         }
 
+        // TODO ?
         @Override
         public void handlePing(PingPayloadPacket pingPacket, PinpointServer pinpointServer) {
             final int eventCounter = pingPacket.getPingId();
             long pingTimestamp = System.currentTimeMillis();
+            Map<Object, Object> channelPropertiesMap = pinpointServer.getChannelProperties();
+            ChannelProperties channelProperties = DefaultChannelProperties.newChannelProperties(channelPropertiesMap);
             try {
                 if (!(eventCounter < 0)) {
-                    agentLifeCycleEventHandler.handleLifeCycleEvent(pinpointServer, pingTimestamp, AgentLifeCycleState.RUNNING, eventCounter);
+                    agentLifeCycleAsyncTaskService.handleLifeCycleEvent(channelProperties, pingTimestamp, AgentLifeCycleState.RUNNING, eventCounter);
                 }
-                agentEventHandler.handleEvent(pinpointServer, pingTimestamp, AgentEventType.AGENT_PING);
+                agentEventAsyncTaskService.handleEvent(channelProperties, pingTimestamp, AgentEventType.AGENT_PING);
             } catch (Exception e) {
                 logger.warn("Error handling ping event", e);
             }
         }
-
     }
-
 }

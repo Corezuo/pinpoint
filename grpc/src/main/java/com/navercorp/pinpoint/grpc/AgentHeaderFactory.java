@@ -17,6 +17,7 @@
 package com.navercorp.pinpoint.grpc;
 
 import com.navercorp.pinpoint.common.util.Assert;
+import io.grpc.Attributes;
 import io.grpc.Metadata;
 
 /**
@@ -24,9 +25,9 @@ import io.grpc.Metadata;
  */
 public class AgentHeaderFactory implements HeaderFactory<AgentHeaderFactory.Header> {
 
-    public static final Metadata.Key<String> AGENT_ID_KEY = newStringKey("pinpoint-agentid");
-    public static final Metadata.Key<String> APPLICATION_NAME_KEY = newStringKey("pinpoint-applicationname");
-    public static final Metadata.Key<String> AGENT_START_TIME_KEY = newStringKey("pinpoint-agentstarttime");
+    public static final Metadata.Key<String> AGENT_ID_KEY = newStringKey("agentid");
+    public static final Metadata.Key<String> APPLICATION_NAME_KEY = newStringKey("applicationname");
+    public static final Metadata.Key<String> AGENT_START_TIME_KEY = newStringKey("starttime");
 
     private final Header header;
 
@@ -44,9 +45,7 @@ public class AgentHeaderFactory implements HeaderFactory<AgentHeaderFactory.Head
 
     public Header extract(Metadata headers) {
         final String agentId = headers.get(AGENT_ID_KEY);
-
         final String applicationName = headers.get(APPLICATION_NAME_KEY);
-
         final String agentStartTimeStr = headers.get(AGENT_START_TIME_KEY);
         Assert.requireNonNull(agentStartTimeStr, "agentStartTime must not be null");
         // check number format
@@ -54,7 +53,6 @@ public class AgentHeaderFactory implements HeaderFactory<AgentHeaderFactory.Head
 
         return new Header(agentId, applicationName, startTime);
     }
-
 
 
     public Metadata newHeader() {
@@ -70,15 +68,15 @@ public class AgentHeaderFactory implements HeaderFactory<AgentHeaderFactory.Head
         private final String applicationName;
         private final long agentStartTime;
 
-        public Header(String agentId, String applicationName, long agentStartTime){
+        public Header(String agentId, String applicationName, long agentStartTime) {
             this.agentId = validateId(Assert.requireNonNull(agentId, "agentId must not be null"));
             this.applicationName = validateId(Assert.requireNonNull(applicationName, "applicationName must not be null"));
             this.agentStartTime = agentStartTime;
         }
 
-        private String validateId(String agentId) {
+        private String validateId(String id) {
             // TODO
-            return agentId;
+            return id;
         }
 
         public String getAgentId() {
@@ -93,13 +91,15 @@ public class AgentHeaderFactory implements HeaderFactory<AgentHeaderFactory.Head
             return agentStartTime;
         }
 
+
         @Override
         public String toString() {
-            return "Header{" +
-                    "agentId='" + agentId + '\'' +
-                    ", applicationName='" + applicationName + '\'' +
-                    ", agentStartTime=" + agentStartTime +
-                    '}';
+            final StringBuilder sb = new StringBuilder("Header{");
+            sb.append("agentId='").append(agentId).append('\'');
+            sb.append(", applicationName='").append(applicationName).append('\'');
+            sb.append(", agentStartTime=").append(agentStartTime);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }
